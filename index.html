@@ -310,28 +310,42 @@
         clearUI();
         return;
       }
+      
+      if(typeof d === 'string' && d.startsWith("LỖI:")) {
+        Swal.fire("Thông báo", d.replace("LỖI: ", ""), "warning");
+        clearUI();
+        return;
+      }
 
       curData = d;
-      document.getElementById('dateLoad').innerText = d.dateLoad || '--/--';
+      document.getElementById('dateLoad').innerText = d.dateAA || '--/--';
       
       // Hiển thị thông tin đơn hàng
       let s1Html = `
         <div class="order-box">
-          <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">${d.orderName || 'THÔNG TIN ĐƠN HÀNG'}</div>
+          <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">THÔNG TIN ĐƠN HÀNG</div>
           <div style="font-size:12px; color:#555;">Mã Rpro: <span class="tag-rpro">${v}</span></div>
         </div>
       `;
       document.getElementById('s1').innerHTML = s1Html;
 
       // Hiển thị bảng vật tư (nếu có)
-      if(d.materials && d.materials.length > 0) {
+      if(d.items && d.items.length > 0) {
         let matHtml = `
           <div class="table-responsive">
             <table class="custom-table">
-              <tr><th>Vật Tư</th><th>Yêu Cầu</th><th>Thực Tế</th></tr>
-        `;
-        d.materials.forEach(m => {
-          matHtml += `<tr><td>${m.name}</td><td>${m.qtyReq}</td><td style="color:red">${m.qtyAct}</td></tr>`;
+              <tr>
+                <th style="width:30%">Vật Tư</th>
+                <th>PU / SL</th>
+                <th>Vải / SL</th>
+              </tr>`;
+              
+        d.items.forEach(item => {
+          matHtml += `<tr>
+            <td style="font-size:9px; text-align:left;">${item.rpro.replace(/ \| /g, '<br>')}</td>
+            <td style="color:#2e7d32;">${item.pu}<br><b style="color:red">${item.puQty}</b></td>
+            <td style="color:#1565c0;">${item.vai}<br><b style="color:red">${item.vaiQty}</b></td>
+          </tr>`;
         });
         matHtml += "</table></div>";
         document.getElementById('matTableContainer').innerHTML = matHtml;
@@ -346,9 +360,14 @@
   function handleSave() {
     if(!curData) return;
     Swal.fire({ title: 'Đang gửi dữ liệu...', didOpen: () => Swal.showLoading() });
-    callGAS("submitReturn", { data: curData }).then(res => {
-      Swal.fire({icon: 'success', title: 'Đã gửi kho thành công!', timer: 1500, showConfirmButton: false});
-      clearUI();
+    // Khớp với GAS: action "submit" và tham số "payload"
+    callGAS("submit", { payload: curData }).then(res => {
+      if(res === "Thành công!") {
+        Swal.fire({icon: 'success', title: 'Đã gửi kho thành công!', timer: 1500, showConfirmButton: false});
+        clearUI();
+      } else {
+        Swal.fire("Lỗi", res || "Không thể lưu dữ liệu", "error");
+      }
     });
   }
 
