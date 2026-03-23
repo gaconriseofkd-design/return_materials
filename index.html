@@ -240,12 +240,13 @@
 <script>
   var curData = null; 
   var html5QrCode = null;
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec";
+  const GAS_URL = "/api/gas";
 
   async function callGAS(action, params = {}) {
     try {
       const response = await fetch(GAS_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...params })
       });
       return await response.json();
