@@ -126,7 +126,7 @@
       border: 1px solid #bbdefb; 
       margin: 3px; 
     }
-
+    
     .table-responsive { 
       width: 100%;
       overflow-x: auto; 
@@ -175,14 +175,14 @@
   </style>
 </head>
 <body>
-
+    
 <div class="tabs">
   <div id="t-sx" class="tab active" onclick="openTab('sx')">SẢN XUẤT</div>
   <div id="t-kho" class="tab" onclick="openTab('kho')">THỦ KHO</div>
   <div id="t-lookup" class="tab" onclick="openTab('lookup')">TRA CỨU</div>
   <div id="t-rep" class="tab" onclick="openTab('rep')">BÁO CÁO</div>
 </div>
-
+    
 <div id="sx" class="content active">
   <div style="display: flex; gap: 10px; margin-bottom: 15px;">
     <button class="btn btn-cam" onclick="startCamera()">📷 CAMERA</button>
@@ -201,28 +201,28 @@
       <div id="dateLoad" class="static-box">--/--</div>
     </div>
   </div>
-
+    
   <div id="resSX" style="display:none; margin-top: 15px; border-top: 2px dashed #ccc; padding-top: 15px;">
     <div id="s1"></div>
     <div id="matTableContainer"></div>
-
+    
     <div style="display: flex; gap: 10px; margin-top: 20px;">
       <button class="btn" style="background:var(--danger); flex: 1;" onclick="handleCancel()">❌ HỦY</button>
       <button class="btn" style="background:var(--success); flex: 2;" onclick="handleSave()">✅ GỬI KHO</button>
     </div>
   </div>
 </div>
-
+    
 <div id="kho" class="content">
   <button class="btn" style="background:#607d8b; margin-bottom:15px;" onclick="loadPending()">🔄 LÀM MỚI DANH SÁCH</button>
   <div id="listPending"></div>
 </div>
-
+    
 <div id="lookup" class="content">
   <input type="text" id="lookupInp" placeholder="Tìm mã đơn hàng..." onchange="handleLookup()">
   <div id="resLookup" style="margin-top:15px"></div>
 </div>
-
+    
 <div id="rep" class="content">
   <div style="background: #fce4ec; padding: 15px; border-radius: 10px; border: 1px solid #f8bbd0;">
     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -236,12 +236,12 @@
   </div>
   <div id="resRep" style="margin-top:15px"></div>
 </div>
-
+    
 <script>
   var curData = null; 
   var html5QrCode = null;
   const GAS_URL = "/api/gas";
-
+    
   async function callGAS(action, params = {}) {
     try {
       const response = await fetch(GAS_URL, {
@@ -256,7 +256,7 @@
       return null;
     }
   }
-
+    
   function openTab(id) {
     document.querySelectorAll('.tab, .content').forEach(e => e.classList.remove('active'));
     document.getElementById('t-' + id).classList.add('active');
@@ -264,7 +264,7 @@
     stopCamera();
     if(id === 'kho') loadPending();
   }
-
+    
   // --- CAMERA LOGIC ---
   function startCamera() {
     document.getElementById('reader').style.display = 'block';
@@ -278,13 +278,13 @@
       document.getElementById('reader').style.display = 'none';
     });
   }
-
+    
   function stopCamera() {
     if (html5QrCode && html5QrCode.isScanning) {
       html5QrCode.stop().then(() => { document.getElementById('reader').style.display = 'none'; });
     }
   }
-
+    
   function scanFromFile(input) {
     if (!input.files || input.files.length === 0) return;
     const fileScanner = new Html5Qrcode("reader");
@@ -297,7 +297,7 @@
       })
       .catch(() => { Swal.fire('Thất bại', 'Không tìm thấy mã trong ảnh!', 'warning'); });
   }
-
+    
   // --- XỬ LÝ SẢN XUẤT ---
   function handleSearch() {
     let v = document.getElementById('barcode').value.trim();
@@ -317,7 +317,7 @@
         clearUI();
         return;
       }
-
+    
       curData = d;
       document.getElementById('dateLoad').innerText = d.dateAA || '--/--';
       
@@ -329,7 +329,7 @@
         </div>
       `;
       document.getElementById('s1').innerHTML = s1Html;
-
+    
       // Hiển thị bảng vật tư (nếu có)
       if(d.items && d.items.length > 0) {
         let matHtml = `
@@ -357,7 +357,7 @@
       document.getElementById('resSX').style.display = 'block';
     });
   }
-
+    
   function handleSave() {
     if(!curData) return;
     Swal.fire({ title: 'Đang gửi dữ liệu...', didOpen: () => Swal.showLoading() });
@@ -371,19 +371,19 @@
       }
     });
   }
-
+    
   function handleCancel() {
     clearUI();
     Swal.fire({ icon: 'info', title: 'Đã xóa!', timer: 800, showConfirmButton: false });
   }
-
+    
   function clearUI() {
     curData = null;
     document.getElementById('barcode').value = '';
     document.getElementById('dateLoad').innerText = '--/--';
     document.getElementById('resSX').style.display = 'none';
   }
-
+    
   // --- XỬ LÝ THỦ KHO (ĐÃ CẬP NHẬT TÁCH CỘT) ---
   function loadPending() {
     let div = document.getElementById('listPending');
@@ -421,7 +421,7 @@
       div.innerHTML = html + '</table></div>';
     });
   }
-
+    
   function handleConfirm(row) {
     Swal.fire({ title: 'Đang xác nhận...', didOpen: () => Swal.showLoading() });
     callGAS("confirmOrder", { row: row }).then(() => {
@@ -429,7 +429,7 @@
       loadPending();
     });
   }
-
+    
   // --- TRA CỨU & BÁO CÁO ---
   function handleLookup() {
     let val = document.getElementById('lookupInp').value;
@@ -443,7 +443,7 @@
       div.innerHTML = html + '</table></div>';
     });
   }
-
+    
   function viewRep() {
     let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
     if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn đủ ngày', 'warning');
@@ -460,7 +460,7 @@
       document.getElementById('resRep').innerHTML = html + '</table></div>';
     });
   }
-
+    
   function downEx() {
     let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
     if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn ngày để xuất file', 'warning');

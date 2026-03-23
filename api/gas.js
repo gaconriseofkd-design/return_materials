@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
-  // THAY LINK WEB APP CỦA BẠN VÀO ĐÂY
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec";
+  // LINK WEB APP MỚI CỦA BẠN
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzDM7fC-qWKMIi-K5OnmThWHF9DqV5oChy9RmBqz8r-jumsfisy7pJIhMBAFpnkQPkMxQ/exec";
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
