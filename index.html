@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --success: #28a745; 
+      --danger: #d32f2f;
+      --warning: #ffb300;
+      --bg-color: #f0f2f5; 
+      --card-bg: #ffffff;
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-color); 
+      margin: 0; 
+      padding: 10px; 
+      color: #333; 
+    }
+    
+    /* --- THANH TABS --- */
+    .tabs { 
+      display: flex;
+      gap: 5px; 
+      margin-bottom: 15px; 
+      position: sticky; 
+      top: 0; 
+      z-index: 100; 
+      background: var(--bg-color); 
+      padding-bottom: 5px;
+    }
+    .tab { 
+      flex: 1; 
+      padding: 12px 2px; 
+      text-align: center; 
+      cursor: pointer; 
+      background: var(--card-bg); 
+      border-radius: 8px;
+      font-weight: 700; 
+      font-size: 11px; 
+      color: #555; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      transition: all 0.2s ease; 
+      white-space: nowrap;
+      border: 1px solid #e0e0e0;
+    }
+    .tab.active { 
+      background: var(--primary); 
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 8px rgba(26,115,232,0.3);
+    }
+    
+    .content { 
+      display: none; 
+      background: var(--card-bg); 
+      padding: 15px; 
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+      min-height: 450px; 
+    }
+    .content.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    input[type="text"], input[type="date"] { 
+      width: 100%;
+      padding: 14px; 
+      margin: 8px 0; 
+      border: 1.5px solid #ddd; 
+      border-radius: 8px; 
+      font-size: 16px; 
+      box-sizing: border-box; 
+      outline: none; 
+    }
+    
+    .btn { 
+      width: 100%; 
+      padding: 14px; 
+      border: none; 
+      border-radius: 8px; 
+      font-weight: bold;
+      font-size: 14px; 
+      cursor: pointer; 
+      color: white; 
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-cam { background: var(--primary); }
+    .btn-upload { background: #fb8c00; }
+    
+    .static-box { 
+      background: #e8f0fe;
+      padding: 14px; 
+      border-radius: 8px; 
+      text-align: center; 
+      font-weight: 800; 
+      color: var(--danger); 
+      font-size: 18px; 
+      border: 1.5px solid #aecbfa; 
+      margin: 8px 0;
+    }
+    
+    .order-box { 
+      background: #fff8e1;
+      border: 1.5px dashed var(--warning);
+      padding: 12px; 
+      border-radius: 8px; 
+      text-align: center; 
+      margin-bottom: 15px; 
+    }
+    .tag-rpro { 
+      display: inline-block; 
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 6px 12px; 
+      border-radius: 20px;
+      font-size: 12px; 
+      font-weight: 800; 
+      border: 1px solid #bbdefb; 
+      margin: 3px; 
+    }
+
+    .table-responsive { 
+      width: 100%;
+      overflow-x: auto; 
+      border-radius: 8px; 
+      border: 1px solid #cfd8dc; 
+      margin-top: 10px;
+    }
+    .custom-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 11px; 
+    }
+    .custom-table th { 
+      background: #455a64;
+      color: white; 
+      padding: 12px 4px; 
+      text-align: center; 
+      border-bottom: 2px solid #37474f; 
+    }
+    .custom-table td { 
+      padding: 10px 4px; 
+      text-align: center; 
+      border-bottom: 1px solid #eceff1; 
+      font-weight: bold;
+    }
+    
+    .btn-ok { 
+      background: var(--success); 
+      color: white; 
+      border: none; 
+      padding: 10px 2px; 
+      border-radius: 6px;
+      font-weight: bold; 
+      width: 100%; 
+      cursor: pointer;
+      font-size: 11px;
+    }
+    #reader { 
+      width: 100%; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      display: none; 
+      margin-bottom: 15px;
+      border: 2px solid var(--primary); 
+    }
+  </style>
+</head>
+<body>
+
+<div class="tabs">
+  <div id="t-sx" class="tab active" onclick="openTab('sx')">SẢN XUẤT</div>
+  <div id="t-kho" class="tab" onclick="openTab('kho')">THỦ KHO</div>
+  <div id="t-lookup" class="tab" onclick="openTab('lookup')">TRA CỨU</div>
+  <div id="t-rep" class="tab" onclick="openTab('rep')">BÁO CÁO</div>
+</div>
+
+<div id="sx" class="content active">
+  <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+    <button class="btn btn-cam" onclick="startCamera()">📷 CAMERA</button>
+    <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">📸 CHỤP ẢNH</button>
+  </div>
+  <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="scanFromFile(this)">
+  <div id="reader"></div>
+  
+  <div style="display: flex; gap: 10px; align-items: flex-end;">
+    <div style="flex: 2;">
+      <label style="font-size: 11px; font-weight: bold; color: #666;">NHẬP/QUÉT MÃ RPRO:</label>
+      <input type="text" id="barcode" placeholder="Quét hoặc nhập..." onchange="handleSearch()">
+    </div>
+    <div style="flex: 1;">
+      <label style="font-size: 11px; font-weight: bold; color: #666;">NGÀY LOAD:</label>
+      <div id="dateLoad" class="static-box">--/--</div>
+    </div>
+  </div>
+
+  <div id="resSX" style="display:none; margin-top: 15px; border-top: 2px dashed #ccc; padding-top: 15px;">
+    <div id="s1"></div>
+    <div id="matTableContainer"></div>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="btn" style="background:var(--danger); flex: 1;" onclick="handleCancel()">❌ HỦY</button>
+      <button class="btn" style="background:var(--success); flex: 2;" onclick="handleSave()">✅ GỬI KHO</button>
+    </div>
+  </div>
+</div>
+
+<div id="kho" class="content">
+  <button class="btn" style="background:#607d8b; margin-bottom:15px;" onclick="loadPending()">🔄 LÀM MỚI DANH SÁCH</button>
+  <div id="listPending"></div>
+</div>
+
+<div id="lookup" class="content">
+  <input type="text" id="lookupInp" placeholder="Tìm mã đơn hàng..." onchange="handleLookup()">
+  <div id="resLookup" style="margin-top:15px"></div>
+</div>
+
+<div id="rep" class="content">
+  <div style="background: #fce4ec; padding: 15px; border-radius: 10px; border: 1px solid #f8bbd0;">
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <div style="flex:1"><label style="font-size:11px; font-weight:bold;">TỪ NGÀY:</label><input type="date" id="fDate"></div>
+      <div style="flex:1"><label style="font-size:11px; font-weight:bold;">ĐẾN NGÀY:</label><input type="date" id="tDate"></div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn" style="background:#ad1457; flex:1;" onclick="viewRep()">XEM</button>
+      <button class="btn" style="background:#2e7d32; flex:1;" onclick="downEx()">XUẤT EXCEL</button>
+    </div>
+  </div>
+  <div id="resRep" style="margin-top:15px"></div>
+</div>
+
+<script>
+  var curData = null; 
+  var html5QrCode = null;
+
+  function openTab(id) {
+    document.querySelectorAll('.tab, .content').forEach(e => e.classList.remove('active'));
+    document.getElementById('t-' + id).classList.add('active');
+    document.getElementById(id).classList.add('active');
+    stopCamera();
+    if(id === 'kho') loadPending();
+  }
+
+  // --- CAMERA LOGIC ---
+  function startCamera() {
+    document.getElementById('reader').style.display = 'block';
+    if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+      document.getElementById('barcode').value = text; 
+      stopCamera(); 
+      handleSearch();
+    }).catch(err => { 
+      Swal.fire('Lỗi', 'Không thể mở Camera. Vui lòng chọn "Chụp ảnh"', 'error');
+      document.getElementById('reader').style.display = 'none';
+    });
+  }
+
+  function stopCamera() {
+    if (html5QrCode && html5QrCode.isScanning) {
+      html5QrCode.stop().then(() => { document.getElementById('reader').style.display = 'none'; });
+    }
+  }
+
+  function scanFromFile(input) {
+    if (!input.files || input.files.length === 0) return;
+    const fileScanner = new Html5Qrcode("reader");
+    Swal.fire({title: 'Đang đọc mã...', didOpen: () => Swal.showLoading()});
+    fileScanner.scanFile(input.files[0], true)
+      .then(text => {
+        Swal.close();
+        document.getElementById('barcode').value = text; 
+        handleSearch();
+      })
+      .catch(() => { Swal.fire('Thất bại', 'Không tìm thấy mã trong ảnh!', 'warning'); });
+  }
+
+  // --- XỬ LÝ SẢN XUẤT ---
+  function handleSearch() {
+    let v = document.getElementById('barcode').value.trim();
+    if(!v) return;
+    Swal.fire({ title: 'Đang tìm dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    fetch("https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getOrder",
+        rpro: v
+      })
+    })
+    .then(res => res.json())
+    .then(d => {
+      // xử lý như cũ
+    });
+  }
+
+  function handleSave() {
+    if(!curData) return;
+    Swal.fire({ title: 'Đang gửi dữ liệu...', didOpen: () => Swal.showLoading() });
+    google.script.run.withSuccessHandler(m => {
+      Swal.fire({icon: 'success', title: 'Đã gửi kho thành công!', timer: 1500, showConfirmButton: false});
+      clearUI();
+    }).submitReturn(curData);
+  }
+
+  function handleCancel() {
+    clearUI();
+    Swal.fire({ icon: 'info', title: 'Đã xóa!', timer: 800, showConfirmButton: false });
+  }
+
+  function clearUI() {
+    curData = null;
+    document.getElementById('barcode').value = '';
+    document.getElementById('dateLoad').innerText = '--/--';
+    document.getElementById('resSX').style.display = 'none';
+  }
+
+  // --- XỬ LÝ THỦ KHO (ĐÃ CẬP NHẬT TÁCH CỘT) ---
+  function loadPending() {
+    let div = document.getElementById('listPending');
+    div.innerHTML = "<div style='text-align:center; padding:30px;'>🔄 Đang tải danh sách chờ...</div>";
+    
+    google.script.run.withSuccessHandler(list => {
+      if (!list || list.length === 0) { 
+        div.innerHTML = "<div style='text-align:center; padding:40px; color:#2e7d32; font-weight:bold;'>✅ Hiện tại không có đơn nào chờ nhận</div>";
+        return; 
+      }
+      
+      let html = `<div class="table-responsive"><table class="custom-table">
+        <tr>
+          <th style="width:25%">Đơn Hàng</th>
+          <th>Mã PU</th>
+          <th>SL PU</th>
+          <th>Mã Vải</th>
+          <th>SL Vải</th>
+          <th style="width:12%">Nhận</th>
+        </tr>`;
+            
+      list.forEach(i => {
+        html += `<tr>
+          <td style="text-align:left; font-size:10px; background:#fffde7;">
+            <b>${i.rpro.replace(/ \| /g, '<br>')}</b><br>
+            <span style="color:var(--danger); font-size:9px;">📅 ${i.date}</span> <span style="color:#666; font-size:9px;">⏰ ${i.time}</span>
+          </td>
+          <td style="color:#2e7d32; font-size:10px;">${i.pu}</td>
+          <td style="color:red; font-size:11px;">${i.puQty}</td>
+          <td style="color:#1565c0; font-size:10px;">${i.vai}</td>
+          <td style="color:red; font-size:11px;">${i.vaiQty}</td>
+          <td><button class="btn-ok" onclick="handleConfirm(${i.row})">OK</button></td>
+        </tr>`;
+      });
+      div.innerHTML = html + '</table></div>';
+    }).getPendingOrders();
+  }
+
+  function handleConfirm(row) {
+    Swal.fire({ title: 'Đang xác nhận...', didOpen: () => Swal.showLoading() });
+    google.script.run.withSuccessHandler(() => {
+      Swal.fire({icon: 'success', title: 'Đã nhập kho!', timer: 1000, showConfirmButton: false});
+      loadPending();
+    }).confirmOrder(row);
+  }
+
+  // --- TRA CỨU & BÁO CÁO ---
+  function handleLookup() {
+    let val = document.getElementById('lookupInp').value;
+    if(!val) return;
+    document.getElementById('resLookup').innerHTML = "Đang tìm...";
+    google.script.run.withSuccessHandler(res => {
+      let div = document.getElementById('resLookup');
+      if(res === "NOT_FOUND") { div.innerHTML = "❌ Không tìm thấy mã này"; return; }
+      let html = '<div class="table-responsive"><table class="custom-table"><tr><th>Ngày</th><th>Đơn hàng</th><th>TT</th></tr>';
+      res.forEach(r => { html += `<tr><td>${r.date}</td><td style="font-size:10px">${r.rpro}</td><td>${r.status}</td></tr>`; });
+      div.innerHTML = html + '</table></div>';
+    }).lookupRPRO(val);
+  }
+
+  function viewRep() {
+    let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
+    if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn đủ ngày', 'warning');
+    document.getElementById('resRep').innerHTML = "Đang lấy dữ liệu...";
+    google.script.run.withSuccessHandler(res => {
+      let html = '<div class="table-responsive"><table class="custom-table"><tr><th>TG Quét</th><th>Đơn</th><th>PU</th><th>SL</th><th>Vải</th><th>SL</th></tr>';
+      res.rows.forEach(r => {
+        html += `<tr><td>${r[0]}</td><td style="font-size:9px">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`;
+      });
+      document.getElementById('resRep').innerHTML = html + '</table></div>';
+    }).getReportData(f, t);
+  }
+
+  function downEx() {
+    let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
+    if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn ngày để xuất file', 'warning');
+    Swal.fire({title: 'Đang tạo file...', didOpen: () => Swal.showLoading()});
+    google.script.run.withSuccessHandler(url => { 
+      Swal.close();
+      if(url === "Trống") return Swal.fire('Thông báo', 'Không có dữ liệu trong khoảng ngày này', 'info');
+      window.open(url, '_blank'); 
+    }).exportReportToExcel(f, t);
+  }
+</script>
+</body>
+</html>
