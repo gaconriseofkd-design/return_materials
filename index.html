@@ -238,6 +238,8 @@
 </div>
 
 <script>
+  var curData = null; 
+  var html5QrCode = null;
   const GAS_URL = "https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec";
 
   async function callGAS(action, params = {}) {
