@@ -238,8 +238,21 @@
 </div>
 
 <script>
-  var curData = null; 
-  var html5QrCode = null;
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec";
+
+  async function callGAS(action, params = {}) {
+    try {
+      const response = await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({ action, ...params })
+      });
+      return await response.json();
+    } catch (err) {
+      console.error("Lỗi kết nối GAS:", err);
+      Swal.fire("Lỗi", "Không thể kết nối với máy chủ. Vui lòng thử lại sau.", "error");
+      return null;
+    }
+  }
 
   function openTab(id) {
     document.querySelectorAll('.tab, .content').forEach(e => e.classList.remove('active'));
@@ -288,26 +301,53 @@
     if(!v) return;
     Swal.fire({ title: 'Đang tìm dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
-    fetch("https://script.google.com/macros/s/AKfycbya59GqWjzXw_icZyP_dxHtuhhTTIXt0K_PiW9NPU54s8xXZwSsGSxyKMbio8QIOb-ckg/exec", {
-      method: "POST",
-      body: JSON.stringify({
-        action: "getOrder",
-        rpro: v
-      })
-    })
-    .then(res => res.json())
-    .then(d => {
-      // xử lý như cũ
+    callGAS("getOrder", { rpro: v }).then(d => {
+      Swal.close();
+      if(!d || d === "NOT_FOUND") {
+        Swal.fire("Lỗi", "Không tìm thấy dữ liệu đơn hàng!", "error");
+        clearUI();
+        return;
+      }
+
+      curData = d;
+      document.getElementById('dateLoad').innerText = d.dateLoad || '--/--';
+      
+      // Hiển thị thông tin đơn hàng
+      let s1Html = `
+        <div class="order-box">
+          <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">${d.orderName || 'THÔNG TIN ĐƠN HÀNG'}</div>
+          <div style="font-size:12px; color:#555;">Mã Rpro: <span class="tag-rpro">${v}</span></div>
+        </div>
+      `;
+      document.getElementById('s1').innerHTML = s1Html;
+
+      // Hiển thị bảng vật tư (nếu có)
+      if(d.materials && d.materials.length > 0) {
+        let matHtml = `
+          <div class="table-responsive">
+            <table class="custom-table">
+              <tr><th>Vật Tư</th><th>Yêu Cầu</th><th>Thực Tế</th></tr>
+        `;
+        d.materials.forEach(m => {
+          matHtml += `<tr><td>${m.name}</td><td>${m.qtyReq}</td><td style="color:red">${m.qtyAct}</td></tr>`;
+        });
+        matHtml += "</table></div>";
+        document.getElementById('matTableContainer').innerHTML = matHtml;
+      } else {
+        document.getElementById('matTableContainer').innerHTML = "<p style='text-align:center; font-size:12px; color:#666;'>Không có chi tiết vật tư</p>";
+      }
+      
+      document.getElementById('resSX').style.display = 'block';
     });
   }
 
   function handleSave() {
     if(!curData) return;
     Swal.fire({ title: 'Đang gửi dữ liệu...', didOpen: () => Swal.showLoading() });
-    google.script.run.withSuccessHandler(m => {
+    callGAS("submitReturn", { data: curData }).then(res => {
       Swal.fire({icon: 'success', title: 'Đã gửi kho thành công!', timer: 1500, showConfirmButton: false});
       clearUI();
-    }).submitReturn(curData);
+    });
   }
 
   function handleCancel() {
@@ -327,7 +367,7 @@
     let div = document.getElementById('listPending');
     div.innerHTML = "<div style='text-align:center; padding:30px;'>🔄 Đang tải danh sách chờ...</div>";
     
-    google.script.run.withSuccessHandler(list => {
+    callGAS("getPendingOrders").then(list => {
       if (!list || list.length === 0) { 
         div.innerHTML = "<div style='text-align:center; padding:40px; color:#2e7d32; font-weight:bold;'>✅ Hiện tại không có đơn nào chờ nhận</div>";
         return; 
@@ -357,15 +397,15 @@
         </tr>`;
       });
       div.innerHTML = html + '</table></div>';
-    }).getPendingOrders();
+    });
   }
 
   function handleConfirm(row) {
     Swal.fire({ title: 'Đang xác nhận...', didOpen: () => Swal.showLoading() });
-    google.script.run.withSuccessHandler(() => {
+    callGAS("confirmOrder", { row: row }).then(() => {
       Swal.fire({icon: 'success', title: 'Đã nhập kho!', timer: 1000, showConfirmButton: false});
       loadPending();
-    }).confirmOrder(row);
+    });
   }
 
   // --- TRA CỨU & BÁO CÁO ---
@@ -373,37 +413,41 @@
     let val = document.getElementById('lookupInp').value;
     if(!val) return;
     document.getElementById('resLookup').innerHTML = "Đang tìm...";
-    google.script.run.withSuccessHandler(res => {
+    callGAS("lookupRPRO", { rpro: val }).then(res => {
       let div = document.getElementById('resLookup');
-      if(res === "NOT_FOUND") { div.innerHTML = "❌ Không tìm thấy mã này"; return; }
+      if(!res || res === "NOT_FOUND") { div.innerHTML = "❌ Không tìm thấy mã này"; return; }
       let html = '<div class="table-responsive"><table class="custom-table"><tr><th>Ngày</th><th>Đơn hàng</th><th>TT</th></tr>';
       res.forEach(r => { html += `<tr><td>${r.date}</td><td style="font-size:10px">${r.rpro}</td><td>${r.status}</td></tr>`; });
       div.innerHTML = html + '</table></div>';
-    }).lookupRPRO(val);
+    });
   }
 
   function viewRep() {
     let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
     if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn đủ ngày', 'warning');
     document.getElementById('resRep').innerHTML = "Đang lấy dữ liệu...";
-    google.script.run.withSuccessHandler(res => {
+    callGAS("getReportData", { fromDate: f, toDate: t }).then(res => {
+      if(!res || !res.rows) {
+         document.getElementById('resRep').innerHTML = "Không có dữ liệu.";
+         return;
+      }
       let html = '<div class="table-responsive"><table class="custom-table"><tr><th>TG Quét</th><th>Đơn</th><th>PU</th><th>SL</th><th>Vải</th><th>SL</th></tr>';
       res.rows.forEach(r => {
         html += `<tr><td>${r[0]}</td><td style="font-size:9px">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`;
       });
       document.getElementById('resRep').innerHTML = html + '</table></div>';
-    }).getReportData(f, t);
+    });
   }
 
   function downEx() {
     let f = document.getElementById('fDate').value, t = document.getElementById('tDate').value;
     if(!f || !t) return Swal.fire('Lỗi', 'Vui lòng chọn ngày để xuất file', 'warning');
     Swal.fire({title: 'Đang tạo file...', didOpen: () => Swal.showLoading()});
-    google.script.run.withSuccessHandler(url => { 
+    callGAS("exportReportToExcel", { fromDate: f, toDate: t }).then(url => { 
       Swal.close();
-      if(url === "Trống") return Swal.fire('Thông báo', 'Không có dữ liệu trong khoảng ngày này', 'info');
+      if(!url || url === "Trống") return Swal.fire('Thông báo', 'Không có dữ liệu trong khoảng ngày này', 'info');
       window.open(url, '_blank'); 
-    }).exportReportToExcel(f, t);
+    });
   }
 </script>
 </body>
