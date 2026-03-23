@@ -360,15 +360,23 @@
     
   function handleSave() {
     if(!curData) return;
+    console.log("Đang gửi dữ liệu đi:", curData);
     Swal.fire({ title: 'Đang gửi dữ liệu...', didOpen: () => Swal.showLoading() });
+    
     // Khớp với GAS: action "submit" và tham số "payload"
     callGAS("submit", { payload: curData }).then(res => {
+      console.log("Phản hồi từ máy chủ:", res);
+      Swal.close();
+      
       if(res === "Thành công!") {
         Swal.fire({icon: 'success', title: 'Đã gửi kho thành công!', timer: 1500, showConfirmButton: false});
         clearUI();
       } else {
-        Swal.fire("Lỗi", res || "Không thể lưu dữ liệu", "error");
+        Swal.fire("Lỗi", typeof res === 'string' ? res : "Có lỗi xảy ra khi lưu dữ liệu", "error");
       }
+    }).catch(err => {
+      console.error("Lỗi khi gọi submit:", err);
+      Swal.fire("Lỗi hệ thống", "Không thể gửi dữ liệu. Kiểm tra Console.", "error");
     });
   }
     
